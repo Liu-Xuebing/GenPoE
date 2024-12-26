@@ -1,3 +1,10 @@
+import json
+
+def write_json(x, path):
+    with open(path, "w") as f:
+        f.write(json.dumps(x, indent=4))
+
+
 class AverageMeter(object):
     def __init__(self) -> None:
         self.reset()

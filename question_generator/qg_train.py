@@ -43,7 +43,7 @@ def get_model(checkpoint: str, device: str, tokenizer: T5Tokenizer) -> T5ForCond
 if __name__ == "__main__":
     args = parse_args()
     tokenizer = get_tokenizer(args.qg_model)
-    with open('../articles/NQ_TQA_dataset.json', 'r') as f:
+    with open('../datasets/NQ_TQA_dataset.json', 'r') as f:
         dataset = json.load(f)
     dataset_train = dataset[:int(len(dataset) * 0.9)]
     dataset_valid = dataset[int(len(dataset) * 0.9):]

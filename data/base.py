@@ -11,7 +11,6 @@ class NQ_TQA_Dataset(Dataset):
         self.config = config
         self.tok = tok
         self.status = status
-
         self.data = []
         if status=='Train':
             if th is None:
