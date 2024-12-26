@@ -40,7 +40,7 @@
 # total_datasets = create_dataset()
 # random.shuffle(total_datasets)
 # print([total_datasets[0]])
-# print("The number of training dataset is ", len(total_datasets))
+# print("The number of question_generator dataset is ", len(total_datasets))
 #
 # write_json(total_datasets, path='../articles/NQ_TQA_dataset.json')
 
@@ -91,6 +91,6 @@ total_datasets = create_dataset()
 random.shuffle(total_datasets)
 total_datasets = total_datasets
 print([total_datasets[0]])
-print("The number of training dataset is ", len(total_datasets))
+print("The number of question_generator dataset is ", len(total_datasets))
 
 write_json(total_datasets, path='/data3/liuxb/code/MMOE/question_generator/train_classification_rounter/classification.json')

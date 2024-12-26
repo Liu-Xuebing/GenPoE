@@ -27,7 +27,7 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     args = parse_args()
-    qg = QuestionGenerator('./training/t5-xl-question-generator')
+    qg = QuestionGenerator('question_generator/t5-xl-question-generator')
 
     # with open('/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json') as file:
     #     datas = json.load(file)
