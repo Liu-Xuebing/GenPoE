@@ -165,10 +165,3 @@ import torch.nn.functional as F  # 用于计算 softmax
 #     softmax_probs = F.softmax(sims, dim=0)
 #
 #     return keys, softmax_probs
-
-
-def first_word_cap(text):
-    words = text.split()
-    words[0] = words[0].capitalize()
-    text = " ".join(words)
-    return text
