@@ -25,6 +25,7 @@ def create_pre_hook_fn(id, weights):
     return pre_hook_fn
 
 
+
 def EM_F1_of_model_generation(input_id, input_id_len, model, tok, answers):
     output = model.generate(input_id, max_new_tokens=10, temperature=0.0, top_p=1.0, top_k=-1,
                                  do_sample=False)
@@ -123,16 +124,16 @@ def main(config):
     # torch.save(expert_params, os.path.join(config.save_path, 'general_MOE.pth'))
     # recover_layer(model, config.single_layer, original_layer)
 
-    with open(config.valid_path) as f:
-        datas = json.load(f)
-    for i in trange(1500):
-        valid_loader = make_Validation_loader(config, tok, i)
-
-        ctxs = datas[i]["ctxs"][:config.num_experts]
-        indexs = []
-        for ctx in ctxs:
-            if ctx['id'] in sub_dataset_expert:
-                indexs.append(ctx['id'])
+    # with open(config.valid_path) as f:
+    #     datas = json.load(f)
+    # for i in trange(1500):
+    #     valid_loader = make_Validation_loader(config, tok, i)
+    #
+    #     ctxs = datas[i]["ctxs"][:config.num_experts]
+    #     indexs = []
+    #     for ctx in ctxs:
+    #         if ctx['id'] in sub_dataset_expert:
+    #             indexs.append(ctx['id'])
         # indexs, indexs_value = search_topK_with_softmax(query, rounter_model, K = config.num_experts)
 
         # if len(indexs) == 0:
@@ -155,15 +156,15 @@ def main(config):
         #             updated_expert_params[new_key] = expert_params[key]
 
         # model.load_state_dict(updated_expert_params, strict=False)
-        results = valid(model, tok, valid_loader, layer=config.single_layer)
+        # results = valid(model, tok, valid_loader, layer=config.single_layer)
         # recover_layer(model, config.single_layer, original_layer)
 
-        for key, value in zip(metrics.keys(), results):
-            metrics[key].append(value)
-
-        if (i+1) % 10 == 0:
-            for key, value in metrics.items():
-                print(key, len(metrics[key]), np.mean(metrics[key]) * 100)
+        # for key, value in zip(metrics.keys(), results):
+        #     metrics[key].append(value)
+        #
+        # if (i+1) % 10 == 0:
+        #     for key, value in metrics.items():
+        #         print(key, len(metrics[key]), np.mean(metrics[key]) * 100)
 
 
 if __name__ == '__main__':

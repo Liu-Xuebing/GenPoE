@@ -1,0 +1,5 @@
+model_dir: /data3/liuxb/code/MMoE/checkpoints/question_generator/t5-xl-question-generator
+
+dataset_file: /data3/liuxb/datasets/Wiki/psgs_w100.tsv
+dataset_dict_file: /data3/liuxb/datasets/Wiki/psgs_w100_dict.json
+test_dataset_file: /data3/liuxb/datasets/NQ/NQ_test_rerank_results.json

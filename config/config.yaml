@@ -1,8 +1,8 @@
 #dir
 model_name: "meta-llama/Llama-2-7b-hf"    # meta-llama/Llama-2-7b-hf, baichuan-inc/Baichuan2-7B-Base, Qwen/Qwen2.5-7B-Instruct, mistralai/Mistral-7B-Instruct-v0.3
 model_ckpt:
-train_path: /data3/liuxb/code/MMOE/question_generator/syn_QA/NQ # /data3/liuxb/datasets/syn_knowledges/NQ_after_reranker/1
-valid_path: /data3/liuxb/datasets/NQ/NQ_test_rerank_results.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
+train_path: /data3/liuxb/code/MMOE/syn_QA/NQ # /data3/liuxb/datasets/syn_knowledges/NQ_after_reranker/1
+test_dataset_file: /data3/liuxb/datasets/NQ/NQ_test_rerank_results.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
 save_path: /data3/liuxb/code/MMOE/question_generator/syn_QA/NQ_MoE
 #model
 half: False

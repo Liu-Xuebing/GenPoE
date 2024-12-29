@@ -1,12 +1,9 @@
 import json
 import os
 import torch
-from nltk import pos_tag
-from nltk.tokenize import word_tokenize
 import torch.nn.functional as F
 from collections import Counter
 import numpy as np
-from responses import replace
 
 WHITESPACE_AND_PUNCTUATION = {' ', '.', ',', ':', ';', '!', '?', '$', '%', '(', ')', '[', ']', '-', '`', '\'', '"'}
 ARTICLES = {'the', 'a', 'an'}
@@ -32,6 +29,13 @@ for data in datas[:1000]:
 print(len(sub_dataset_expert))
 sub_dataset_expert = list(set(sub_dataset_expert))
 print(len(sub_dataset_expert))
+
+
+
+def write_json(x, path):
+    with open(path, "w") as f:
+        f.write(json.dumps(x, indent=4))
+
 
 def find_subsequence_index(source, target):
     for i in range(len(source) - len(target) + 1):
@@ -165,3 +169,10 @@ import torch.nn.functional as F  # 用于计算 softmax
 #     softmax_probs = F.softmax(sims, dim=0)
 #
 #     return keys, softmax_probs
+
+
+def first_word_cap(text):
+    words = text.split()
+    words[0] = words[0].capitalize()
+    text = " ".join(words)
+    return text

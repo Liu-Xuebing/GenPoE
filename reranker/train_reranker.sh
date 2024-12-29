@@ -1,16 +1,16 @@
-torchrun --nproc_per_node 4 \
+torchrun --nproc_per_node 6 \
 -m FlagEmbedding.llm_reranker.finetune_for_instruction.run \
 --output_dir /data3/liuxb/code/MMoE/checkpoints/reranker/NQ \
 --model_name_or_path BAAI/bge-reranker-v2-gemma \
 --train_data /data3/liuxb/code/MMoE/datasets/reranker/NQ/reranker.json \
---learning_rate 2e-4 \
---num_train_epochs 5 \
+--learning_rate 1e-4 \
+--num_train_epochs 2 \
 --per_device_train_batch_size 1 \
 --gradient_accumulation_steps 16 \
 --dataloader_drop_last True \
 --query_max_len 128 \
---passage_max_len 128 \
---train_group_size 32 \
+--passage_max_len 256 \
+--train_group_size 18 \
 --logging_steps 10 \
 --save_steps 2000 \
 --save_total_limit 50 \
@@ -22,5 +22,5 @@ torchrun --nproc_per_node 4 \
 --use_lora True \
 --lora_rank 32 \
 --lora_alpha 64 \
---use_flash_attn True \
+--use_flash_attn False \
 --target_modules q_proj k_proj v_proj o_proj

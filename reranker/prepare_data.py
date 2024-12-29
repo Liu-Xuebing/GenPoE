@@ -19,17 +19,17 @@ def create_dataset(output_dir):
         passages = nq['ctxs']
         pos, neg = [], []
         for pas in passages:
-            if pas['has_answer'] and pas['title'] not in pos:
-                pos.append(pas['title'])
-        for pas in passages:
-            if not pas['has_answer'] and pas['title'] not in pos and pas['title'] not in neg:
-                neg.append(pas['title'])
+            if pas['has_answer']:
+                pos.append('title: {} context: {}'.format(pas['title'], pas['text']))
+            else:
+                neg.append('title: {} context: {}'.format(pas['title'], pas['text']))
+
 
         if len(pos) != 0 and len(neg) != 0:
             data_ = {"query": question,
                      "pos": pos,
                      "neg": neg,
-                     "prompt": "Given a query A and a title B, determine whether the title is relevant to the query by providing a prediction of either 'Yes' or 'No'."}
+                     "prompt": "Given a query A and a passage B, determine whether the passage contains an answer to the query by providing a prediction of either 'Yes' or 'No'."}
             datas.append(data_)
 
     random.shuffle(datas)
@@ -41,4 +41,11 @@ def create_dataset(output_dir):
 
 
 if __name__ == '__main__':
-    create_dataset(output_dir='./datasets/reranker/NQ/reranker.json')
+    # create_dataset(output_dir='./datasets/reranker/NQ/reranker.json')
+    with open('/data3/liuxb/code/MMoE/datasets/reranker/NQ/reranker.json', 'r', encoding='utf-8') as fp:
+        data_list = []
+        for line in fp:
+            data = json.loads(line.strip())  # 将每行加载为字典
+            print(data)
+            exit()
+            data_list.append(data)
