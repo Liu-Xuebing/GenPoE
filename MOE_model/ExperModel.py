@@ -51,21 +51,14 @@ class LowRankExpert(nn.Module):
 
 
 # 定义 MoE 层，包含门控机制和多个专家
-class MoE(nn.Module):
+class Static_MoE(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, num_experts):
-        super(MoE, self).__init__()
+        super(Static_MoE, self).__init__()
         self.experts = nn.ModuleList(LowRankExpert(input_dim, hidden_dim, output_dim, rank=512) for _ in range(num_experts))
         # self.expert = LowRankExpert(input_dim, hidden_dim, output_dim, rank=512)
 
-
-    def forward(self, x, weights):
-        ## Training
-        # output = self.expert(x)
-        # return output
-
-        ## Testing
+    def forward(self, x):
         output = torch.zeros(x.shape).cuda()  # 创建一个与输入形状相同的零张量来存储最终输出
-
         # 对于每个样本，使用不同的专家处理
         for i, expert in enumerate(self.experts):
             expert_output = expert(x)  # 每个专家处理一个输入（注意需要增加batch维度）
@@ -74,16 +67,35 @@ class MoE(nn.Module):
 
 
 
+class Dynamic_MoE(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_experts=4):
+        super(Dynamic_MoE, self).__init__()
+        self.num_experts = num_experts
+        self.experts = nn.ModuleList(LowRankExpert(input_dim, hidden_dim, output_dim, rank=512) for _ in range(num_experts))
+        self.gate = nn.Linear(input_dim, num_experts)  # gate decision, W_g
+
+
+    def forward(self, x):
+        gate_output = torch.softmax(self.gate(torch.cat([x],  dim=-1)), dim=-1)  # 生成每个专家的权重
+        ## soft-control
+        output = 0
+        for i, expert in enumerate(self.experts):
+            expert_output = expert(x)
+            output += gate_output[:, i:i+1] * expert_output  # weighted the results of each expert
+        return output
+
+
 
 # 定义并行处理的函数
 class ParallelFFNMoE(nn.Module):
-    def __init__(self, ffn, moe, coe_lambda):
+    def __init__(self, ffn, moe_layer_1, moe_layer_2=None, coe_lambda=1):
         super(ParallelFFNMoE, self).__init__()
         self.ffn = ffn
-        self.moe = moe
+        self.moe_layer_1 = moe_layer_1
+        self.moe_layer_2 = moe_layer_2
         self.coe_lambda = coe_lambda
 
-    def forward(self, x, id, weights):
+    def forward(self, x, id):
         # 创建一个空列表，用于存放每个token计算的结果
         final_output = torch.zeros_like(x)
         for i in range(x.size(1)):
@@ -93,16 +105,16 @@ class ParallelFFNMoE(nn.Module):
                 final_output[:, i:i+1, :] = token_ffn_output.unsqueeze(dim=1)
             else:
                 token_ffn_output = self.ffn(token)  # FFN处理
-                token_moe_output = self.moe(token, weights)  # MoE处理
-                final_output[:, i:i+1, :] = token_ffn_output.unsqueeze(dim=1) + (self.coe_lambda * token_moe_output.unsqueeze(dim=1))
+                if self.moe_layer_2:
+                    token_moe_output_1 = self.moe_layer_1(token)  # MoE处理
+                    token_moe_output_2 = self.moe_layer_2(token)  # MoE处理
+                    final_output[:, i:i+1, :] = (token_ffn_output.unsqueeze(dim=1) +
+                                                 (self.coe_lambda * token_moe_output_1.unsqueeze(dim=1)) +
+                                                 (self.coe_lambda * token_moe_output_2.unsqueeze(dim=1)))
+                else:
+                    token_moe_output_1 = self.moe_layer_1(token)  # MoE处理
+                    final_output[:, i:i + 1, :] = (token_ffn_output.unsqueeze(dim=1) +
+                                                   (self.coe_lambda * token_moe_output_1.unsqueeze(dim=1)))
 
-        # print(weighted_features)
-        # for i in range(x.size(1)):
-        #     token = x[:, i, :]
-        #     token_moe_output = self.moe(token)  # MoE处理
-            # print(token_moe_output.size())
-        # token_output = token_ffn_output + self.coe_lambda * token_moe_output
-        # token_outputs.append(token_output.unsqueeze(dim=1))
-        # print(len(token_outputs))
         return final_output
 

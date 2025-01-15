@@ -127,7 +127,6 @@ class QuestionGenerator:
         docs = list(spacy_nlp.pipe(sentences, disable=["parser"]))
         inputs_from_text = []
         answers_from_text = []
-
         for doc, sentence in zip(docs, sentences):
             entities = list({ent.text: ent for ent in doc.ents}.values())
             if entities:
@@ -137,6 +136,30 @@ class QuestionGenerator:
                     answers = str(entity)
                     inputs_from_text.append(qg_input)
                     answers_from_text.append(answers)
+            else:
+                nouns = []
+                temp_noun = []
+                for token in doc:
+                    if token.pos_ == "NOUN":
+                        temp_noun.append(token.text)  # 收集连续的名词
+                    else:
+                        if temp_noun:  # 如果连续名词结束
+                            nouns.append(" ".join(temp_noun))
+                            temp_noun = []
+                if temp_noun:
+                    nouns.append(" ".join(temp_noun))
+                nouns = list(set(nouns))
+                if nouns:
+                    for noun_phrase in nouns:
+                        qg_input = "Generate a question with <answer> as '{}' from the <context>: {}".format(noun_phrase,
+                                                                                                             sentence)
+                        inputs_from_text.append(qg_input)
+                        answers_from_text.append(noun_phrase)
+                else:
+                    # 如果没有名词，添加一个默认提示
+                    qg_input = "Generate a question from the <context>: {}".format(sentence)
+                    inputs_from_text.append(qg_input)
+                    answers_from_text.append(None)
 
         return inputs_from_text, answers_from_text
 

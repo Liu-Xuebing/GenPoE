@@ -13,28 +13,26 @@ class NQ_TQA_Dataset(Dataset):
         self.status = status
         self.data = []
         if status=='Train':
-            if th is None:
-                files = os.listdir(self.config.train_path)
-                for f in files:
+            if isinstance(th, list):
+                for f in th:
                     file = os.path.join(self.config.train_path, f)
                     with open(file) as train_data:
                         datas = json.load(train_data)
                     for data in datas:
-                        question = data[0] + '?' if data[0][-1] != '?' else data[0]
-                        answer = data[1]
+                        question = data['question'] + '?' if data['question'][-1] != '?' else data['question']
+                        answer = data['answer']
                         self.data.append([question, answer])
             else:
-                f = os.path.join(self.config.train_path, '{}.json'.format(th))
+                f = os.path.join(self.config.train_path, th)
                 with open(f) as train_data:
                     datas = json.load(train_data)
                 for data in datas:
                     question = data['question'] + '?' if data['question'][-1] != '?' else data['question']
                     answer = data['answer']
-                    text = data['text']
-                    self.data.append([question, answer, text])
+                    self.data.append([question, answer])
 
         elif status == "Test":
-            with open(self.config.valid_path) as valid_data:
+            with open(self.config.test_dataset_file) as valid_data:
                 datas = json.load(valid_data)
             if th is None:
                 self.data = datas
@@ -52,8 +50,8 @@ class NQ_TQA_Dataset(Dataset):
 
     def __getitem__(self, idx):
         if self.status == 'Train':
-            question, answer, text = self.data[idx]
-            new_question = 'Knowledge:\n{}\nQuestion: {}\nAnswer:'.format(text, question)
+            question, answer = self.data[idx]
+            new_question = 'Question: {}\nAnswer:'.format(question)
             new_answer = '{}\n'.format(answer)
             tok_tuples = self.tok_tuples(new_question, new_answer)
             return tok_tuples, question

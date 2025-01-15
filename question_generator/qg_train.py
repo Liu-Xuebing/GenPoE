@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--qg_model", type=str, default="google/flan-t5-xl")
     parser.add_argument("--pad_mask_id", type=int, default=-100)
     parser.add_argument("--pin_memory", dest="pin_memory", action="store_true", default=False)
-    parser.add_argument("--save_dir", type=str, default="./t5-xl-question-generator")
+    parser.add_argument("--save_dir", type=str, default="../checkpoints/question_generator/t5-xl-question-generator-SQuAD")
     parser.add_argument("--train_batch_size", type=int, default=32)
     parser.add_argument("--valid_batch_size", type=int, default=64)
     return parser.parse_args()
@@ -43,7 +43,7 @@ def get_model(checkpoint: str, device: str, tokenizer: T5Tokenizer) -> T5ForCond
 if __name__ == "__main__":
     args = parse_args()
     tokenizer = get_tokenizer(args.qg_model)
-    with open('../datasets/NQ_TQA_dataset.json', 'r') as f:
+    with open('../datasets/question_generator/SQuAD_dataset.json', 'r') as f:
         dataset = json.load(f)
     dataset_train = dataset[:int(len(dataset) * 0.9)]
     dataset_valid = dataset[int(len(dataset) * 0.9):]

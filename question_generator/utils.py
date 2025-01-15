@@ -1,5 +1,10 @@
 import json
 
+def read_json(path):
+    with open(path, 'r') as f:
+        datas = json.load(f)
+    return datas
+
 def write_json(x, path):
     with open(path, "w") as f:
         f.write(json.dumps(x, indent=4))

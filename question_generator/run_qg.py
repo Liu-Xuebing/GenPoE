@@ -1,12 +1,13 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import argparse
 from questiongenerator import QuestionGenerator
 from questiongenerator import print_qa
 import json
 from tqdm import tqdm
-import numpy as np
 import hydra
+import csv
+from utils import read_json
 
 
 def write_json(x, path):
@@ -24,35 +25,34 @@ def parse_args() -> argparse.Namespace:
 
 
 
+
 @hydra.main(config_path="../config", config_name="qg_config")
 def generate_syn_knowledge(config):
     args = parse_args()
     qg = QuestionGenerator(config.model_dir)
-    with open(config.test_dataset_file) as tp:
-        datas = json.load(tp)
-    with open(config.dataset_file) as dp:
-        wiki_dict = json.load(dp)
+    datas = read_json(config.test_dataset_file)
 
-    for data in datas:
-        title = data['ctxs'][0]['title']['paragraph']
-        paragraph_indexes = wiki_dict[title]
-        print(paragraph_indexes)
-
-    for ix, data in enumerate(tqdm(datas)):
-
+    for data in tqdm(datas):
         ctxs = data['ctxs'][:8]
-        for ic, ctx in enumerate(ctxs):
-            text = ctx['text']
+        for ctx in ctxs:
+            if os.path.exists("/data3/liuxb/code/MMoE/syn_knowledge/NQ/{}.json".format(ctx['id'][len('wiki:'):])):
+                continue
             qa_list = qg.generate(
-
-                text,
+                ctx['text'],
                 num_questions=int(args.num_questions),
                 use_evaluator=args.use_qa_eval)
-            write_json(qa_list, "/data3/liuxb/code/MMOE/question_generator/syn_QA/NQ/{}_{}.json".format(ix, ic))
-    print_qa(qa_list, show_answers=args.show_answers)
-
+            write_json(qa_list, "/data3/liuxb/code/MMoE/syn_knowledge/NQ/{}.json".format(ctx['id'][len('wiki:'):]))
+        # print_qa(syn_knowledge, show_answers=args.show_answers)
 
 
 if __name__ == "__main__":
-    generate_syn_knowledge()
-
+    # generate_syn_knowledge()
+    dir = '/data3/liuxb/code/MMoE/syn_knowledge/NQ'
+    files = os.listdir(dir)
+    # print(len(files))
+    # for f in files:
+    #     with open(os.path.join(dir, f), 'r') as fp:
+    #         data = json.load(fp)
+    #     if len(data) == 0:
+    #         print(f)
+    # #         os.remove(os.path.join(dir, f))

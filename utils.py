@@ -8,25 +8,14 @@ import numpy as np
 WHITESPACE_AND_PUNCTUATION = {' ', '.', ',', ':', ';', '!', '?', '$', '%', '(', ')', '[', ']', '-', '`', '\'', '"'}
 ARTICLES = {'the', 'a', 'an'}
 
-
-# files = os.listdir('/data3/liuxb/code/MMOE/question_generator/syn_QA/NQ_embedding')
-# expert_embedding = {}
-# for file in files:
-#     if int(file.split('.')[0].split('_')[1]) >= 6:
-#         continue
-#     file_dir = os.path.join('/data3/liuxb/code/MMOE/question_generator/syn_QA/NQ_embedding', file)
-#     loaded_embeddings = np.load(file_dir)
-#     expert_embedding[file.split('.')[0]] = loaded_embeddings
-# print('The number of Experts is {}'.format(len(expert_embedding)))
 sub_dataset_expert = []
 with open('/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json') as f:
     datas =  json.load(f)
-for data in datas[:1000]:
-    ctx = data['ctxs'][:8]
+for data in datas:
+    ctx = data['ctxs'][:1]
     for c in ctx:
-        if os.path.exists(os.path.join('/data3/liuxb/code/MMOE/question_generator/syn_QA/NQ_MoE', '{}.pth'.format(c['id']))):
-            sub_dataset_expert.append(c['id'])
-print(len(sub_dataset_expert))
+        if os.path.exists(os.path.join('/data3/liuxb/code/MMoE/syn_knowledge/NQ_MoE_lib', '{}.pth'.format(c['id'][len('wiki:'):]))):
+            sub_dataset_expert.append('{}'.format(c['id']))
 sub_dataset_expert = list(set(sub_dataset_expert))
 print(len(sub_dataset_expert))
 
