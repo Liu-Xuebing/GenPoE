@@ -1,13 +1,16 @@
 from omegaconf import DictConfig
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from .ExperModel import Static_MoE, Dynamic_MoE, ParallelFFNMoE
+from .ExperModel import MoE, ParallelFFNMoE
+from .RouterModel import Router
 
 def make_model(config: DictConfig):
     if config.model_ckpt:
         pass
     else:
         tokenizer = AutoTokenizer.from_pretrained(config.model_name)
-        model = AutoModelForCausalLM.from_pretrained(config.model_name, device_map='balanced')
+        # tokenizer.add_tokens(["[SCORE]"])
+        model = AutoModelForCausalLM.from_pretrained(config.model_name, device_map='auto')
+        # model.resize_token_embeddings(len(tokenizer))  # 更新词嵌入
         for param in model.parameters():
             param.requires_grad = False
 
@@ -19,17 +22,10 @@ def make_model(config: DictConfig):
     return model, tokenizer
 
 
-def replace_layer(model, layer_index, original_layer, num_experts, flag):
+def replace_layer(model, layer_index, original_layer, num_experts):
     ffn_layer = original_layer
-    S_moe_layer = Static_MoE(input_dim=4096, hidden_dim=4096, output_dim=4096, num_experts=num_experts)
-    D_moe_layer = Dynamic_MoE(input_dim=4096, hidden_dim=4096, output_dim=4096, num_experts=4)
-    coe_lambda = 2
-    if flag == 0:
-        model.model.layers[layer_index].mlp = ParallelFFNMoE(ffn_layer, S_moe_layer, coe_lambda = coe_lambda).cuda()
-    elif flag == 1:
-        model.model.layers[layer_index].mlp = ParallelFFNMoE(ffn_layer, D_moe_layer, coe_lambda = coe_lambda).cuda()
-    elif flag == 2:
-        model.model.layers[layer_index].mlp = ParallelFFNMoE(ffn_layer, S_moe_layer, D_moe_layer, coe_lambda = coe_lambda).cuda()
+    moes = MoE(num_experts=num_experts)
+    model.model.layers[layer_index].mlp = ParallelFFNMoE(ffn_layer, moes).to(next(ffn_layer.parameters()).device)
 
 
 def recover_layer(model, layer_index, original_layer):

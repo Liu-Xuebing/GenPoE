@@ -14,30 +14,31 @@ class NQ_TQA_Dataset(Dataset):
         self.data = []
         if status=='Train':
             if isinstance(th, list):
-                for f in th:
-                    file = os.path.join(self.config.train_path, f)
-                    with open(file) as train_data:
+                for t in th:
+                    f = os.path.join(self.config.train_path, t)
+                    with open(f) as train_data:
                         datas = json.load(train_data)
-                    for data in datas:
-                        question = data['question'] + '?' if data['question'][-1] != '?' else data['question']
-                        answer = data['answer']
-                        self.data.append([question, answer])
+
+                        sentence = datas['passage']
+                        QAs = datas['QAs']
+                        for QA in QAs:
+                            question = QA['question'] + '?' if QA['question'][-1] != '?' else QA['question']
+                            answer = QA['answer']
+                            self.data.append([sentence, question, answer])
             else:
                 f = os.path.join(self.config.train_path, th)
                 with open(f) as train_data:
                     datas = json.load(train_data)
                 for data in datas:
-                    question = data['question'] + '?' if data['question'][-1] != '?' else data['question']
-                    answer = data['answer']
-                    self.data.append([question, answer])
+                    sentence = data['passage']
+                    QAs = data['QAs']
+                    for QA in QAs:
+                        question = QA['question'] + '?' if QA['question'][-1] != '?' else QA['question']
+                        answer = QA['answer']
+                        self.data.append([sentence, question, answer])
 
         elif status == "Test":
-            with open(self.config.test_dataset_file) as valid_data:
-                datas = json.load(valid_data)
-            if th is None:
-                self.data = datas
-            else:
-                self.data = datas[th:th+1]
+            self.data = [th]
 
         else:
             raise AssertionError("Error state")
@@ -50,20 +51,24 @@ class NQ_TQA_Dataset(Dataset):
 
     def __getitem__(self, idx):
         if self.status == 'Train':
-            question, answer = self.data[idx]
-            new_question = 'Question: {}\nAnswer:'.format(question)
-            new_answer = '{}\n'.format(answer)
-            tok_tuples = self.tok_tuples(new_question, new_answer)
-            return tok_tuples, question
+            passage, question, answer = self.data[idx]
+            input_w_passage = 'Passage: {}\nQuestion: {}\nAnswer:'.format(passage, question)
+            input_wo_passage = 'Question: {}\nAnswer:'.format(question)
+            answer = '{}\n'.format(answer)
+            tok_tuples_w_passage = self.tok_tuples(input_w_passage, answer)
+            tok_tuples_wo_passage = self.tok_tuples(input_wo_passage, answer)
+            return tok_tuples_w_passage, tok_tuples_wo_passage
         else:
             row = self.data[idx]
             question = row["question"] + "?" if row["question"][-1] != "?" else row["question"]
             question = first_word_cap(question)
             answers = row['answers']
+            passage = row["ctxs"][:1]
+            knowledge = '. '.join([p['text'] for p in passage])
             instruction = 'Base above knowledge, answer the following question with a very short phrase, such as “1998”, “May 16th, 1931”, or “James Bond”, to meet the criteria of exact match datasets.'
             prompt_1 = 'Question: {}\nAnswer:'.format(question)
-            prompt_2 = 'Knowledge:\n{}\nQuestion: {}\nAnswer:'.format(row['ctxs'][0]['text'], question)
-            prompt_3 = 'Knowledge:\n{}\n{}\nQuestion: {}\nAnswer:'.format(row['ctxs'][0]['text'], instruction, question)
+            prompt_2 = 'Knowledge:\n{}\nQuestion: {}\nAnswer:'.format(knowledge, question)
+            prompt_3 = 'Knowledge:\n{}\n{}\nQuestion: {}\nAnswer:'.format(knowledge, instruction, question)
 
             return (self.tok.encode(prompt_1, return_tensors="pt").cuda(),
                     prompt_1,
@@ -95,14 +100,19 @@ class NQ_TQA_Dataset(Dataset):
 
 
     def collate_fn(self, tuples):
-        tokens = [item[0] for item in tuples]  # 获取 tokens
-        sentences = [item[1] for item in tuples]  # 获取原句子
+        tokens_w = [item[0] for item in tuples]  # get w/ tokens
+        tokens_wo = [item[1] for item in tuples]  # get wo tokens
 
-        padded_tokens = {k: pad_sequence([t[k].squeeze(0) for t in tokens],
+        padded_tokens_w = {k: pad_sequence([t[k].squeeze(0) for t in tokens_w],
                                          batch_first=True,
                                          padding_value=-100 if k == "labels" else 0).cuda()
-                         for k in tokens[0].keys()}
-        return  padded_tokens, sentences
+                         for k in tokens_w[0].keys()}
+
+        padded_tokens_wo = {k: pad_sequence([t[k].squeeze(0) for t in tokens_wo],
+                                         batch_first=True,
+                                         padding_value=-100 if k == "labels" else 0).cuda()
+                         for k in tokens_wo[0].keys()}
+        return  padded_tokens_w, padded_tokens_wo
 
 
     def val_collate_fn(self, tuples):

@@ -11,7 +11,7 @@ def read_json(file_name):
 
 
 def create_dataset(output_dir):
-    NQs = read_json('/data3/liuxb/datasets/NQ/NQ_train_results.json')
+    NQs = read_json('/data3/liuxb/datasets/TQA/TQA_train_results.json')
     datas = []
     for nq in tqdm(NQs):
         question = nq['question'] + '?' if nq['question'][-1] != '?' else nq['question']
@@ -20,12 +20,12 @@ def create_dataset(output_dir):
         pos, neg = [], []
         for pas in passages:
             if pas['has_answer']:
-                pos.append('title: {} context: {}'.format(pas['title'], pas['text']))
+                pos.append('{}: {}'.format(pas['title'], pas['text']))
             else:
-                neg.append('title: {} context: {}'.format(pas['title'], pas['text']))
+                neg.append('{}: {}'.format(pas['title'], pas['text']))
 
 
-        if len(pos) != 0 and len(neg) != 0:
+        if len(pos) != 0 and len(neg) >= 32:
             data_ = {"query": question,
                      "pos": pos,
                      "neg": neg,
@@ -41,11 +41,11 @@ def create_dataset(output_dir):
 
 
 if __name__ == '__main__':
-    # create_dataset(output_dir='./datasets/reranker/NQ/reranker.json')
-    with open('/data3/liuxb/code/MMoE/datasets/reranker/NQ/reranker.json', 'r', encoding='utf-8') as fp:
-        data_list = []
-        for line in fp:
-            data = json.loads(line.strip())  # 将每行加载为字典
-            print(data)
-            exit()
-            data_list.append(data)
+    create_dataset(output_dir='../datasets/reranker/TQA/reranker.json')
+    # with open('/data3/liuxb/code/MMoE/datasets/reranker/TQA/reranker.json', 'r', encoding='utf-8') as fp:
+    #     data_list = []
+    #     for line in fp:
+    #         data = json.loads(line.strip())  # 将每行加载为字典
+    #         print(data)
+    #         exit()
+    #         data_list.append(data)

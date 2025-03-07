@@ -16,10 +16,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
     parser.add_argument("--max_length", type=int, default=256)
-    parser.add_argument("--qg_model", type=str, default="google/flan-t5-xl")
+    parser.add_argument("--qg_model", type=str, default="/data3/liuxb/code/MMoE/checkpoints/question_generator/t5-xl-question-generator-TQA")
     parser.add_argument("--pad_mask_id", type=int, default=-100)
     parser.add_argument("--pin_memory", dest="pin_memory", action="store_true", default=False)
-    parser.add_argument("--save_dir", type=str, default="../checkpoints/question_generator/t5-xl-question-generator-SQuAD")
+    parser.add_argument("--save_dir", type=str, default="../checkpoints/question_generator/t5-xl-question-generator-TQA")
     parser.add_argument("--train_batch_size", type=int, default=32)
     parser.add_argument("--valid_batch_size", type=int, default=64)
     return parser.parse_args()
@@ -43,11 +43,10 @@ def get_model(checkpoint: str, device: str, tokenizer: T5Tokenizer) -> T5ForCond
 if __name__ == "__main__":
     args = parse_args()
     tokenizer = get_tokenizer(args.qg_model)
-    with open('../datasets/question_generator/SQuAD_dataset.json', 'r') as f:
+    with open('./datasets/TQA_dataset.json', 'r') as f:
         dataset = json.load(f)
     dataset_train = dataset[:int(len(dataset) * 0.9)]
     dataset_valid = dataset[int(len(dataset) * 0.9):]
-    # dataset = datasets.load_dataset("iarfmoose/question_generator")
     train_set = QGDataset(dataset_train, args.max_length, args.pad_mask_id, tokenizer)
     valid_set = QGDataset(dataset_valid, args.max_length, args.pad_mask_id, tokenizer)
 

@@ -1,9 +1,9 @@
 import json
 import os
-import torch
-import torch.nn.functional as F
+from cProfile import label
 from collections import Counter
-import numpy as np
+import torch
+import torch.nn.functional as F  # 用于计算 softmax
 
 WHITESPACE_AND_PUNCTUATION = {' ', '.', ',', ':', ';', '!', '?', '$', '%', '(', ')', '[', ']', '-', '`', '\'', '"'}
 ARTICLES = {'the', 'a', 'an'}
@@ -12,14 +12,18 @@ sub_dataset_expert = []
 with open('/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json') as f:
     datas =  json.load(f)
 for data in datas:
-    ctx = data['ctxs'][:1]
+    ctx = data['ctxs'][:4]
     for c in ctx:
-        if os.path.exists(os.path.join('/data3/liuxb/code/MMoE/syn_knowledge/NQ_MoE_lib', '{}.pth'.format(c['id'][len('wiki:'):]))):
+        if os.path.exists(os.path.join('/data3/liuxb/code/MMoE/syn_knowledge/NQ_MoE_lib_Lft', '{}.pth'.format(c['id'][len('wiki:'):]))):
             sub_dataset_expert.append('{}'.format(c['id']))
 sub_dataset_expert = list(set(sub_dataset_expert))
 print(len(sub_dataset_expert))
 
 
+def tansfer_to_scftmax(list):
+    scores = torch.tensor(list)
+    softmax_values = F.softmax(scores, dim=0)
+    return softmax_values
 
 def write_json(x, path):
     with open(path, "w") as f:
@@ -49,19 +53,6 @@ def cal_anchor_embedding(sentences, model, tokenizer):
             average_embedding.append(torch.zeros(size=(1,4096)).cuda())
     return torch.cat(average_embedding, dim=0)
 
-
-def cross_entropy(
-    logits: torch.FloatTensor,
-    labels: torch.LongTensor
-):
-    if len(logits.shape) == 2:
-        return F.binary_cross_entropy_with_logits(logits, labels)
-
-    if len(logits.shape) == 3:
-        ans_indice = torch.where(labels != -100)
-        logits = logits[ans_indice]
-        labels = labels[ans_indice]
-        return F.cross_entropy(logits, labels)
 
 
 
@@ -135,29 +126,42 @@ def CleanAnswer(answer):
 #             index = key
 #     return index
 
+def vector_loss(w_M, wo_M, label_w, label_wo):
+    w_M = w_M.to(label_w.device)
+    wo_M = wo_M.to(label_wo.device)
+    w_ans_indice = torch.where(label_w != -100)
+    wo_ans_indice = torch.where(label_wo != -100)
+    assert len(w_ans_indice[0]) == len(wo_ans_indice[0])
+    w_M = w_M[w_ans_indice]
+    wo_M = wo_M[wo_ans_indice]
+    return torch.nn.MSELoss()(wo_M, w_M)
 
-import torch
-import torch.nn.functional as F  # 用于计算 softmax
+
+def cross_entropy(
+    logits: torch.FloatTensor,
+    labels: torch.LongTensor
+):
+    if len(logits.shape) == 2:
+        return F.binary_cross_entropy_with_logits(logits, labels)
+
+    if len(logits.shape) == 3:
+        ans_indice = torch.where(labels != -100)
+        logits = logits[ans_indice]
+        labels = labels[ans_indice]
+        return F.cross_entropy(logits, labels)
 
 
-# def search_topK_with_softmax(query, model, K):
-#     embeddings = model.encode([query])
-#     scores = []
-#
-#     for key, value in expert_embedding.items():
-#         similarities = model.similarity(embeddings, value)
-#         final_mean_sim = torch.max(similarities)
-#         scores.append((final_mean_sim, key))
-#
-#     scores = sorted(scores, key=lambda x: x[0], reverse=True)
-#     topK_scores = scores[:K]
-#
-#     sims = torch.tensor([item[0] for item in topK_scores])  # 相似度值
-#     keys = [item[1] for item in topK_scores]  # keys
-#
-#     softmax_probs = F.softmax(sims, dim=0)
-#
-#     return keys, softmax_probs
+def kl_divergence(p, q, label_p, label_q):
+    batchsize = p.shape[0]
+    KL_loss = 0
+    for i in range(batchsize):
+        w_ans_indice = torch.where(label_p[i] != -100)[0]
+        p_valid =  p[i, w_ans_indice, :]
+        wo_ans_indice = torch.where(label_q[i] != -100)[0]
+        q_valid = q[i, wo_ans_indice, :]
+        KL_loss += F.kl_div(F.log_softmax(q_valid, dim=-1), F.softmax(p_valid, dim=-1), reduction='mean')
+    return KL_loss / batchsize
+
 
 
 def first_word_cap(text):

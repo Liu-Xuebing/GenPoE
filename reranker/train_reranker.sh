@@ -1,26 +1,36 @@
-torchrun --nproc_per_node 6 \
--m FlagEmbedding.llm_reranker.finetune_for_instruction.run \
---output_dir /data3/liuxb/code/MMoE/checkpoints/reranker/NQ \
---model_name_or_path BAAI/bge-reranker-v2-gemma \
---train_data /data3/liuxb/code/MMoE/datasets/reranker/NQ/reranker.json \
---learning_rate 1e-4 \
---num_train_epochs 2 \
---per_device_train_batch_size 1 \
---gradient_accumulation_steps 16 \
---dataloader_drop_last True \
---query_max_len 128 \
---passage_max_len 256 \
---train_group_size 18 \
---logging_steps 10 \
---save_steps 2000 \
---save_total_limit 50 \
---ddp_find_unused_parameters False \
---gradient_checkpointing \
---deepspeed reranker/stage1.json \
---warmup_ratio 0.1 \
---bf16 \
---use_lora True \
---lora_rank 32 \
---lora_alpha 64 \
---use_flash_attn False \
---target_modules q_proj k_proj v_proj o_proj
+CUDA_VISIBLE_DEVICES=4,5,6,7 torchrun --nproc_per_node 4 \
+	-m FlagEmbedding.finetune.reranker.decoder_only.base \
+	--model_name_or_path BAAI/bge-reranker-v2-gemma \
+    --use_lora True \
+    --lora_rank 32 \
+    --lora_alpha 64 \
+    --use_flash_attn False \
+    --target_modules q_proj k_proj v_proj o_proj \
+    --save_merged_lora_model True \
+    --model_type decoder \
+    --cache_dir ./cache/model \
+    --train_data /data3/liuxb/code/MMoE/datasets/reranker/TQA/reranker.json \
+    --cache_path ./cache/data \
+    --train_group_size 16 \
+    --query_max_len 128 \
+    --passage_max_len 512 \
+    --pad_to_multiple_of 8\
+    --knowledge_distillation False \
+    --query_instruction_for_rerank 'A: ' \
+    --query_instruction_format '{}{}' \
+    --passage_instruction_for_rerank 'B: ' \
+    --passage_instruction_format '{}{}' \
+    --output_dir /data3/liuxb/code/MMoE/checkpoints/reranker/TQA \
+    --overwrite_output_dir \
+    --learning_rate 1e-4 \
+    --bf16 \
+    --num_train_epochs 1 \
+    --per_device_train_batch_size 1 \
+    --gradient_accumulation_steps 16 \
+    --dataloader_drop_last True \
+    --warmup_ratio 0.1 \
+    --gradient_checkpointing \
+    --weight_decay 0.01 \
+    --deepspeed ./stage1.json \
+    --logging_steps 1 \
+    --save_steps 1000

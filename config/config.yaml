@@ -1,18 +1,19 @@
-#dir
 model_name: "meta-llama/Llama-2-7b-hf"    # meta-llama/Llama-2-7b-hf, baichuan-inc/Baichuan2-7B-Base, Qwen/Qwen2.5-7B-Instruct, mistralai/Mistral-7B-Instruct-v0.3
 model_ckpt:
 train_path: /data3/liuxb/code/MMoE/syn_knowledge/NQ
 test_dataset_file: /data3/liuxb/datasets/NQ/NQ_test_rerank_results.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
-save_path: /data3/liuxb/code/MMoE/syn_knowledge/NQ_MoE_lib
+save_path: /data3/liuxb/code/MMoE/syn_knowledge/NQ_MoE_lib_Lft
 #model
 half: False
 
 #dataset
-data_name: NQ
-train_batch_size: 8
+#data_name: NQ
+train_batch_size: 16
 valid_batch_size: 1
 
 #train
-single_layer: 11
-injection_paragraphs: 1
 epochs: 10
+train_type: Test
+router_learning_rate: 1e-4
+single_layer: 11
+number_experts: 1
