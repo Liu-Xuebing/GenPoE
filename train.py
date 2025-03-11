@@ -45,47 +45,6 @@ def EM_F1_of_model_generation(input_id, input_id_len, model, tok, answers):
 
 
 
-# def train_router(config, model, tokenizer):
-#     dataset = RouterDataset(config, config.train_router_path, tokenizer)
-#     dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
-#     router = reranker().to(config.device_router)
-#     optimizer = optim.AdamW(router.parameters(), lr=config.router_learning_rate)
-#     loss_fn = RouterLoss(lambda_score = config.router_lambda_score).to(config.device_router)
-#     scheduler = CosineAnnealingLR(optimizer, T_max=len(dataloader), eta_min=1e-6)
-#
-#     model.eval()  # 设为评估模式
-#     router.train()
-#     for step, batch in enumerate(tqdm(dataloader, desc="Training Progress", ncols=80)):
-#         input_ids, score_indices = batch
-#         labels = torch.zeros(config.neg_sample + 1, dtype=torch.float).to(config.device_router)
-#         labels[0] = 1.0
-#
-#         input_ids = {key: value.squeeze(0) for key, value in input_ids.items()}
-#         score_indices = [si[0] for si in score_indices]
-#
-#         hook = model.model.layers[config.single_layer].mlp.register_forward_pre_hook(hook_fn)
-#
-#         extracted_features.clear()
-#         with torch.no_grad():
-#             model(**input_ids)
-#
-#         optimizer.zero_grad()
-#
-#         input_feature = extracted_features[0].to(config.device_router)
-#         scores = router(input_feature, score_indices)
-#
-#         loss = loss_fn(scores, labels)
-#         loss.backward()
-#         optimizer.step()
-#         scheduler.step()
-#         print(loss.item())
-#
-#         hook.remove()
-#         if step % 200 == 0:
-#             torch.save(router.state_dict(), "router_model.pth")
-
-
-
 def train(config, original_model, model, train_loader, optimizer, scheduler):
     model.train()
     for epoch in range(config.epochs):
