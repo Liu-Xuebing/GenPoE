@@ -8,16 +8,16 @@ import torch.nn.functional as F  # 用于计算 softmax
 WHITESPACE_AND_PUNCTUATION = {' ', '.', ',', ':', ';', '!', '?', '$', '%', '(', ')', '[', ']', '-', '`', '\'', '"'}
 ARTICLES = {'the', 'a', 'an'}
 
-sub_dataset_expert = []
-with open('/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json') as f:
-    datas =  json.load(f)
-for data in datas:
-    ctx = data['ctxs'][:4]
-    for c in ctx:
-        if os.path.exists(os.path.join('/data3/liuxb/code/MMoE/syn_knowledge/NQ_MoE_lib_Lft', '{}.pth'.format(c['id'][len('wiki:'):]))):
-            sub_dataset_expert.append('{}'.format(c['id']))
-sub_dataset_expert = list(set(sub_dataset_expert))
-print(len(sub_dataset_expert))
+# sub_dataset_expert = []
+# with open('/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json') as f:
+#     datas =  json.load(f)
+# for data in datas:
+#     ctx = data['ctxs'][:4]
+#     for c in ctx:
+#         if os.path.exists(os.path.join('/data/liuxb/code/MMoE/syn_knowledge/NQ_MoE_lib_Lft', '{}.pth'.format(c['id'][len('wiki:'):]))):
+#             sub_dataset_expert.append('{}'.format(c['id']))
+# sub_dataset_expert = list(set(sub_dataset_expert))
+# print(len(sub_dataset_expert))
 
 
 def tansfer_to_scftmax(list):

@@ -1,7 +1,7 @@
 import os
 import random
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import argparse
 from questiongenerator import QuestionGenerator
 from questiongenerator import print_qa
@@ -10,7 +10,6 @@ from tqdm import tqdm
 import hydra
 import csv
 from utils import read_json
-from create_dataset import is_complete_sentence, clean_paragraph_spacy
 
 
 def write_json(x, path):
@@ -33,24 +32,35 @@ def parse_args() -> argparse.Namespace:
 def generate_syn_knowledge(config):
     args = parse_args()
     qg = QuestionGenerator(config.model_dir)
-    datas = read_json(config.test_dataset_file)
-
+    # datas = read_json(config.test_dataset_file)
+    datas = read_json('/data/liuxb/datasets/HotpotQA/hotpot_dev_distractor_v1.json')
     random.seed(7)
     random.shuffle(datas)
-    for data in tqdm(datas):
-        ctxs = data['ctxs'][:4]
-        for ctx in ctxs:
-            if os.path.exists("/data3/liuxb/code/MMoE/syn_knowledge/TQA/{}.json".format(ctx['id'][len('wiki:'):])):
-                continue
-            qa_list = qg.generate(
-                ctx['text'],
-                num_questions=int(args.num_questions),
-                use_evaluator=args.use_qa_eval)
+
+    for data in tqdm(datas[88:188]):
+        # ctxs = data['ctxs'][:4]
+        # for ctx in ctxs:
+        # id = data['paragraph']['id']
+
+        context_dict = {}
+        for c in data['context']:
+            context_dict[c[0]] = c[1]
+        context = []
+        for s_f in data['supporting_facts']:
+            context.append(context_dict[s_f[0]][s_f[1]])
+        t = ' '.join(context)
+
+        if os.path.exists("/data/liuxb/code/MMoE/syn_knowledge/hotpot/{}.json".format(data['_id'])):
+            continue
+        qa_list = qg.generate(
+            t,
+            num_questions=int(args.num_questions),
+            use_evaluator=args.use_qa_eval)
 
 
-            with open("/data3/liuxb/code/MMoE/syn_knowledge/TQA/{}.json".format(ctx['id'][len('wiki:'):]),
-                      'w') as json_file:
-                json.dump({'passage': ctx['text'], 'QAs': qa_list}, json_file, indent=4)  # indent用于格式化输出，使其更易读
+        with open("/data/liuxb/code/MMoE/syn_knowledge/hotpot/{}.json".format(data['_id']),
+                  'w') as json_file:
+            json.dump({'passage': t, 'QAs': qa_list}, json_file, indent=4)  # indent用于格式化输出，使其更易读
 
         # print_qa(syn_knowledge, show_answers=args.show_answers)
 

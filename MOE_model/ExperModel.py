@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+torch.manual_seed(42)
 
 
 class LowRankExpert(nn.Module):
@@ -17,13 +19,13 @@ class LowRankExpert(nn.Module):
 
         # Low-rank decomposition for hidden layer
         self.hidden_layer_u = nn.Linear(input_dim, rank, bias=False)  # First projection
-        self.hidden_layer_v = nn.Linear(rank, hidden_dim, bias=True)  # Second projection
+        self.hidden_layer_v = nn.Linear(rank, hidden_dim, bias=False)  # Second projection
 
         self.activation = nn.ReLU()
 
         # Low-rank decomposition for output layer
         self.output_layer_u = nn.Linear(hidden_dim, rank, bias=False)  # First projection
-        self.output_layer_v = nn.Linear(rank, output_dim, bias=True)  # Second projection
+        self.output_layer_v = nn.Linear(rank, output_dim, bias=False)  # Second projection
 
     def forward(self, x):
         """
@@ -46,57 +48,50 @@ class LowRankExpert(nn.Module):
         return x
 
 
-# # 定义 MoE 层，包含门控机制和多个专家
-# class Static_MoE(nn.Module):
-#     def __init__(self, input_dim, hidden_dim, output_dim, num_experts):
-#         super(Static_MoE, self).__init__()
-#         self.experts = nn.ModuleList(LowRankExpert(input_dim, hidden_dim, output_dim, rank=512) for _ in range(num_experts))
-#         # self.expert = LowRankExpert(input_dim, hidden_dim, output_dim, rank=512)
-#
-#     def forward(self, x):
-#         output = torch.zeros(x.shape).cuda()  # 创建一个与输入形状相同的零张量来存储最终输出
-#         # 对于每个样本，使用不同的专家处理
-#         for i, expert in enumerate(self.experts):
-#             expert_output = expert(x)  # 每个专家处理一个输入（注意需要增加batch维度）
-#             output += expert_output# 将输出保存到对应位置
-#         return output / len(self.experts)
-
-
-
-# class Dynamic_MoE(nn.Module):
-#     def __init__(self, input_dim, hidden_dim, output_dim, num_experts=4):
-#         super(Dynamic_MoE, self).__init__()
-#         self.num_experts = num_experts
-#         self.experts = nn.ModuleList(LowRankExpert(input_dim, hidden_dim, output_dim, rank=512) for _ in range(num_experts))
-#         self.gate = nn.Linear(input_dim, num_experts)  # gate decision, W_g
-#
-#
-#     def forward(self, x):
-#         gate_output = torch.softmax(self.gate(torch.cat([x],  dim=-1)), dim=-1)  # 生成每个专家的权重
-#         ## soft-control
-#         output = 0
-#         for i, expert in enumerate(self.experts):
-#             expert_output = expert(x)
-#             output += gate_output[:, i:i+1] * expert_output  # weighted the results of each expert
-#         return output
 
 class MoE(nn.Module):
     def __init__(self, input_dim=4096, hidden_dim=4096, output_dim=4096, num_experts=4):
         super().__init__()
         self.num_experts = num_experts
-        self.experts = nn.ModuleList(
-            LowRankExpert(input_dim, hidden_dim, output_dim, rank=512) for _ in range(num_experts))
+        # self.experts = nn.ModuleList(
+        #     LowRankExpert(input_dim, hidden_dim, output_dim, rank=512) for _ in range(num_experts))
+        self.expert = LowRankExpert(input_dim, hidden_dim, output_dim, rank=512).cuda()
 
-    def forward(self, x, scores):
-        output = torch.zeros(x.shape, device=x.device)
-        if isinstance(scores, list):
-            scores = torch.Tensor(scores).to(x.device)
+    def forward(self, x, scores, delta):
+        if delta is None:
+            output = torch.zeros(x.shape, device=x.device)
+            if isinstance(scores, list):
+                scores = torch.Tensor(scores).to(x.device)
+            else:
+                scores = scores.to(x.device)
+            for i, expert in enumerate(self.experts):
+                expert_output = expert(x) * scores[i]
+                output += expert_output
+            return output
         else:
-            scores = scores.to(x.device)
-        for i, expert in enumerate(self.experts):
-            expert_output = expert(x) * scores[i]
-            output += expert_output
-        return output
+            r, in_d = self.expert.hidden_layer_u.weight.shape
+            h_d, _ = self.expert.hidden_layer_v.weight.shape
+            r2, h2 = self.expert.output_layer_u.weight.shape
+            o_d, _ = self.expert.output_layer_v.weight.shape
+            i = 0
+            d1 = delta[:, i:i + r * in_d].view(r, in_d)
+            i += r * in_d
+            d2 = delta[:, i:i + h_d * r].view(h_d, r)
+            i += h_d * r
+            d3 = delta[:, i:i + r2 * h2].view(r2, h2)
+            i += r2 * h2
+            d4 = delta[:, i:i + o_d * r].view(o_d, r)
+            W1 = self.expert.hidden_layer_u.weight + d1.to(self.expert.hidden_layer_u.weight.device)
+            W2 = self.expert.hidden_layer_v.weight + d2.to(self.expert.hidden_layer_v.weight.device)
+            W3 = self.expert.output_layer_u.weight + d3.to(self.expert.output_layer_u.weight.device)
+            W4 = self.expert.output_layer_v.weight + d4.to(self.expert.output_layer_v.weight.device)
+            x = F.linear(x, W1)
+            x = F.linear(x, W2)
+            x = self.expert.activation(x)
+            x = F.linear(x, W3)
+            output = F.linear(x, W4)
+
+            return output
 
 
 
@@ -107,18 +102,16 @@ class ParallelFFNMoE(nn.Module):
         self.ffn = ffn
         self.moes = moes
 
-    def forward(self, x, id, weight):
+    def forward(self, x, id, weight, delta):
         if id > 0 and x.size(1) != 1:
             output_ffn_front = self.ffn(x[:, :id, :])
             output_ffn_back = self.ffn(x[:, id:, :])
-            outputs_moe = self.moes(x[:, id:, :], weight)
+            outputs_moe = self.moes(x[:, id:, :], weight, delta)
             outputs = torch.cat((output_ffn_front, output_ffn_back + outputs_moe), dim=1)
 
         else:
             output_ffn = self.ffn(x)
-            outputs_moe = self.moes(x, weight)
+            outputs_moe = self.moes(x, weight, delta)
             outputs = output_ffn + outputs_moe
 
         return outputs
-
-

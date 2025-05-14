@@ -1,19 +1,25 @@
-model_name: "meta-llama/Llama-2-7b-hf"    # meta-llama/Llama-2-7b-hf, baichuan-inc/Baichuan2-7B-Base, Qwen/Qwen2.5-7B-Instruct, mistralai/Mistral-7B-Instruct-v0.3
-model_ckpt:
-train_path: /data3/liuxb/code/MMoE/syn_knowledge/NQ
-test_dataset_file: /data3/liuxb/datasets/NQ/NQ_test_rerank_results.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
-save_path: /data3/liuxb/code/MMoE/syn_knowledge/NQ_MoE_lib_Lft
+#model_dir
+model_name: "EleutherAI/gpt-j-6B"    # meta-llama/Llama-2-7b-hf, EleutherAI/gpt-j-6B
+hypernetwork_ckpt: /data/liuxb/code/MMoE/{}_{}_hypernetwork.pth
+
+#train_dir
+NQ_train_dataset: /data/liuxb/datasets/NQ/NQ_train_results.json
+TQA_train_dataset: /data/liuxb/datasets/TQA/TQA_train_results.json
+SQuAD_train_dataset: /data/liuxb/datasets/SQuAD/train-v2.0.json
+
+#test_dir
+data_name: NQ
+NQ_test_dataset_file: /data/liuxb/datasets/NQ/NQ_test_rerank_results.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
+TQA_test_dataset_file: /data/liuxb/datasets/TQA/TQA_test_rerank_results.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
+SQuAD_test_dataset_file: /data/liuxb/datasets/SQuAD/dev-v2.0.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
+
 #model
 half: False
-
-#dataset
-#data_name: NQ
-train_batch_size: 16
+train_batch_size: 1
 valid_batch_size: 1
 
 #train
-epochs: 10
-train_type: Test
-router_learning_rate: 1e-4
+learning_rate: 1e-4
+learning_rate_min: 1e-6
 single_layer: 11
-number_experts: 1
+num_experts: 1

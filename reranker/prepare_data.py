@@ -1,4 +1,6 @@
 import json
+
+from statsmodels.tsa.vector_ar.tests.test_var_jmulti import datasets
 from tqdm import tqdm
 import random
 from utils import first_word_cap
@@ -10,7 +12,7 @@ def read_json(file_name):
     return datas
 
 
-def create_dataset(output_dir):
+def create_dataset(type, output_dir):
     NQs = read_json('/data3/liuxb/datasets/TQA/TQA_train_results.json')
     datas = []
     for nq in tqdm(NQs):
@@ -24,7 +26,6 @@ def create_dataset(output_dir):
             else:
                 neg.append('{}: {}'.format(pas['title'], pas['text']))
 
-
         if len(pos) != 0 and len(neg) >= 32:
             data_ = {"query": question,
                      "pos": pos,
@@ -37,7 +38,6 @@ def create_dataset(output_dir):
     with open(output_dir, 'w') as fp:
         for entry in datas:
             json.dump(entry, fp)
-            fp.write('\n')
 
 
 if __name__ == '__main__':

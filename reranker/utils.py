@@ -6,7 +6,3 @@ def first_word_cap(text):
     words[0] = words[0].capitalize()
     text = " ".join(words)
     return text
-
-
-
-
