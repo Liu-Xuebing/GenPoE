@@ -72,7 +72,7 @@ Validation data is prepared in a structured format including:
 
 ####  Generate Expert Parameters
 
-For each Passages to be activated, the corresponding embeddings are extracted from the model and passed through the HyperNetwork. The HyperNetwork produces parameter deltas, which represent updates for the MoE experts. Multiple deltas can be collected for multiple activated sentences.
+For each Passages to be activated, the corresponding embeddings are extracted from the model and passed through the HyperNetwork. The HyperNetwork produces parameter deltas, which represent updates for the MoE experts.
 
 
 #### Apply Expert Updates
@@ -82,7 +82,7 @@ The generated deltas are injected into the target MoE layer before the forward p
 
 #### Model Prediction and Evaluation
 
-The model generates predictions for the base and retrieved inputs. Predictions are compared with ground truth answers using Exact Match (EM) and F1 metrics. Metrics are accumulated across all validation batches to provide an overall performance assessment.
+The model generates predictions for the base(Query) and retrieved(Passage) inputs. Predictions are compared with ground truth answers using Exact Match (EM) and F1 metrics. Metrics are accumulated across all validation batches to provide an overall performance assessment.
 
 
 ---
