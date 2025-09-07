@@ -1,17 +1,21 @@
 #model_dir
-model_name: "EleutherAI/gpt-j-6B"    # meta-llama/Llama-2-7b-hf, EleutherAI/gpt-j-6B
-hypernetwork_ckpt: /data/liuxb/code/MMoE/{}_{}_hypernetwork.pth
+model_name: "meta-llama/Llama-2-7b-hf"    # meta-llama/Llama-2-7b-hf, meta-llama/Llama-3.1-8B, "baichuan-inc/Baichuan2-7B-Base", "Qwen/Qwen2.5-7B-Instruct"
+hypernetwork_ckpt: /home/liuxb/code/MMoE/{}_{}_{}_hypernetwork.pth
 
 #train_dir
-NQ_train_dataset: /data/liuxb/datasets/NQ/NQ_train_results.json
-TQA_train_dataset: /data/liuxb/datasets/TQA/TQA_train_results.json
-SQuAD_train_dataset: /data/liuxb/datasets/SQuAD/train-v2.0.json
+NQ_train_dataset: /home/liuxb/datasets/NQ/NQ_train_results.json
+TQA_train_dataset: /disk/liuxb/datasets/TQA/TQA_train_results.json
+SQuAD_train_dataset: /disk/liuxb/datasets/SQuAD/train-v2.0.json
+Narrative_train_dataset: /home/liuxb/datasets/NarrativeQA/train.json
+MQuAKE_train_dataset: /home/liuxb/datasets/MQuAKE/MQuAKE-CF-train2000.json
 
 #test_dir
-data_name: NQ
-NQ_test_dataset_file: /data/liuxb/datasets/NQ/NQ_test_rerank_results.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
-TQA_test_dataset_file: /data/liuxb/datasets/TQA/TQA_test_rerank_results.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
-SQuAD_test_dataset_file: /data/liuxb/datasets/SQuAD/dev-v2.0.json  #/data3/liuxb/datasets/NQ/NQ_test_rerank_results.json
+data_name: MQuAKE
+NQ_test_dataset_file: /home/liuxb/datasets/NQ/NQ_test_rerank_results.json  #NQ_test_rerank_results.json
+TQA_test_dataset_file: /disk/liuxb/datasets/TQA/TQA_test_rerank_results.json
+SQuAD_test_dataset_file: /disk/liuxb/datasets/SQuAD/dev-v2.0.json
+Narrative_test_dataset_file: /home/liuxb/datasets/NarrativeQA/test.json
+MQuAKE_test_dataset_file: /home/liuxb/datasets/MQuAKE/MQuAKE-CF-test1000.json
 
 #model
 half: False
@@ -23,3 +27,10 @@ learning_rate: 1e-4
 learning_rate_min: 1e-6
 single_layer: 11
 num_experts: 1
+
+#parameter
+embed_feature: 4096
+in_feature: 4096
+hid_feature: 4096
+out_feature: 4096
+rank: 512

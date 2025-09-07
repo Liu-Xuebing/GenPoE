@@ -26,8 +26,8 @@ def create_dataset(type = 'NQ'):
                                     Str: question
                                     Str: id
                                     List: answers
-                                        Dict: [text, answer_start]
-                                            Str: text
+                                        Dict: [text.txt, answer_start]
+                                            Str: text.txt
                                             Num: answer_start
                                     Bool: is_impossible
                             Str: context
@@ -44,7 +44,7 @@ def create_dataset(type = 'NQ'):
                     answers = qa['answers']
                     if len(answers)==0:
                         break
-                    new_dataset['text'] = "Generate a question with <answer> as \'{}\' from the <context>: {}".format(answers[0]['text'], context)
+                    new_dataset['text.txt'] = "Generate a question with <answer> as \'{}\' from the <context>: {}".format(answers[0]['text.txt'], context)
                     TOTAL_DATASETS.append(new_dataset)
 
     elif type == 'NQ' or type == 'TQA':
@@ -60,13 +60,13 @@ def create_dataset(type = 'NQ'):
             text = []
             for ctx in data['ctxs']:
                 if ctx['has_answer']:
-                    text.append("Generate a question with <answer> as '{}' from the <context>: {}".format(answer, ctx['text']))
-                        # 'Generate a question: <answer> {} <context> {}'.format(answer, ctx['text'])
+                    text.append("Generate a question with <answer> as '{}' from the <context>: {}".format(answer, ctx['text.txt']))
+                        # 'Generate a question: <answer> {} <context> {}'.format(answer, ctx['text.txt'])
                     break
 
             if len(text) > 0:
                 for t in text:
-                    TOTAL_DATASETS.append({'question': question, 'text': t})
+                    TOTAL_DATASETS.append({'question': question, 'text.txt': t})
 
     elif type == 'hotpot':
         '''
@@ -98,7 +98,7 @@ def create_dataset(type = 'NQ'):
                         context.append(context_dict[s_f[0]][s_f[1]])
                     t = ' '.join(context)
 
-                    TOTAL_DATASETS.append({'question': question, 'text': "Generate a question with <answer> as '{}' from the <context>: {}".format(answer, t)})
+                    TOTAL_DATASETS.append({'question': question, 'text.txt': "Generate a question with <answer> as '{}' from the <context>: {}".format(answer, t)})
             except Exception as e:
                 print(e)
 

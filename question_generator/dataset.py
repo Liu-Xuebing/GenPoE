@@ -26,7 +26,7 @@ class QGDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index: int) -> Mapping[str, torch.Tensor]:
         item = self.data[index]
-        input_ids, attention_mask = self._encode_text(item['text'])
+        input_ids, attention_mask = self._encode_text(item['text.txt'])
         labels, _ = self._encode_text(item['question'])
         masked_labels = self._mask_label_padding(labels)
         return {

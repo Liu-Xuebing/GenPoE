@@ -67,6 +67,17 @@ class NQ_TQA_SQuAD_Dataset(Dataset):
                             if a['text'] in paragraph:
                                 self.data.append([random_choice_qas['question'], a['text'], paragraph])
                                 break
+                self.data *= 2
+            elif config.data_name == 'Narrative':
+                with open(config.Narrative_train_dataset) as train_data:
+                    datas = json.load(train_data)
+                for data in datas:
+                    self.data.append([data['question'], data['answer'][0], data['passage']])
+            elif config.data_name == 'MQuAKE':
+                with open(config.MQuAKE_train_dataset) as train_data:
+                    datas = json.load(train_data)
+                for data in datas:
+                    self.data.append([data['question'], data['answer'], data['passage']])
             else:
                 raise AssertionError("Error dataset")
 
@@ -93,6 +104,16 @@ class NQ_TQA_SQuAD_Dataset(Dataset):
                         if random_choice_qas['is_impossible']:
                             continue
                         self.data.append([random_choice_qas['question'], answers, [paragraph]])
+            elif config.data_name == 'Narrative':
+                with open(config.Narrative_test_dataset_file) as test_data:
+                    datas = json.load(test_data)
+                for data in datas:
+                    self.data.append([data['question'], data['answer'], data['passage']])
+            elif config.data_name == 'MQuAKE':
+                with open(config.MQuAKE_test_dataset_file) as test_data:
+                    datas = json.load(test_data)
+                for data in datas:
+                    self.data.append([data['question'], [data['answer']], data['passage']])
             else:
                 raise AssertionError("Error dataset")
 
@@ -115,17 +136,25 @@ class NQ_TQA_SQuAD_Dataset(Dataset):
             tok_tuples, tok_sentence = self.tok_tuples(input, answer, passage)
             return tok_tuples, tok_sentence
         elif self.status == 'Test':
+            print(self.data[idx])
             question, answers, passage = self.data[idx]
             question = question + "?" if question[-1] != "?" else question
             question = first_word_cap(question)
-            passage = passage[:1]
-            knowledge = '. '.join([p['text'] for p in passage]) if self.config.data_name in ['NQ', 'TQA'] else '. '.join(passage)
+            # passage = passage[:self.config.num_experts]
+            # for p in reversed(passage):
+            #     if p['has_answer']:
+            #         pp = p
+            #         break
+            # pp = passage[0]
+            # knowledge = pp['text'] if self.config.data_name in ['NQ', 'TQA'] else '. '.join(passage)
+            knowledge = passage
             instruction = 'Base above knowledge, answer the following question with a very short phrase, such as “1998”, “May 16th, 1931”, or “James Bond”, to meet the criteria of exact match datasets.'
             prompt_1 = 'Question: {}\nAnswer:'.format(question)
             prompt_2 = 'Knowledge:\n{}\nQuestion: {}\nAnswer:'.format(knowledge, question)
             prompt_3 = 'Knowledge:\n{}\n{}\nQuestion: {}\nAnswer:'.format(knowledge, instruction, question)
 
-            tok_sentence = self.tok(knowledge, return_tensors="pt")
+            # tok_sentence = [self.tok(p['text'], return_tensors="pt") for p in passage]
+            tok_sentence = [self.tok(knowledge, return_tensors="pt")]
 
             return (self.tok.encode(prompt_1, return_tensors="pt").cuda(),
                     prompt_1,
@@ -140,10 +169,17 @@ class NQ_TQA_SQuAD_Dataset(Dataset):
 
 
     def tok_tuples(self, prompt, answer, passage):
-        if isinstance(self.tok, GPT2TokenizerFast):
-            answer = " " + answer
-        else:
+        if self.config.model_name == 'meta-llama/Llama-2-7b-hf':
             answer = answer
+        elif self.config.model_name == "meta-llama/Llama-3.1-8B":
+            answer = " " + answer
+        elif self.config.model_name == "baichuan-inc/Baichuan2-7B-Base":
+            answer = answer
+        elif self.config.model_name == "Qwen/Qwen2.5-7B-Instruct":
+            answer = answer
+        else:
+            raise AssertionError("Error model")
+
         tok_prompt = self.tok(prompt, return_tensors="pt")
         tok_answer = self.tok(answer, return_tensors="pt", add_special_tokens=False)
         tok_sentence = self.tok(passage, return_tensors="pt")

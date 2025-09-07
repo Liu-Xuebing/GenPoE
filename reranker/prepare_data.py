@@ -22,9 +22,9 @@ def create_dataset(type, output_dir):
         pos, neg = [], []
         for pas in passages:
             if pas['has_answer']:
-                pos.append('{}: {}'.format(pas['title'], pas['text']))
+                pos.append('{}: {}'.format(pas['title'], pas['text.txt']))
             else:
-                neg.append('{}: {}'.format(pas['title'], pas['text']))
+                neg.append('{}: {}'.format(pas['title'], pas['text.txt']))
 
         if len(pos) != 0 and len(neg) >= 32:
             data_ = {"query": question,

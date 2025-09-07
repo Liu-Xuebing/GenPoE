@@ -22,4 +22,3 @@ class HyperNetwork(nn.Module):
         x_embed = x_embed.mean(dim=1)
         delta_vector = self.generator(x_embed)  # shape: [batch_size, total_params]
         return delta_vector
-

@@ -87,9 +87,9 @@ class QuestionGenerator:
 
 
     def generate_qg_inputs(self, text: str) -> Tuple[List[str], List[str]]:
-        """Given a text, returns a list of MOE_model inputs and a list of corresponding answers.
-        Model inputs take the form "answer_token <answer text> context_token <context text>" where
-        the answer is a string extracted from the text, and the context is the wider text surrounding
+        """Given a text.txt, returns a list of MOE_model inputs and a list of corresponding answers.
+        Model inputs take the form "answer_token <answer text.txt> context_token <context text.txt>" where
+        the answer is a string extracted from the text.txt, and the context is the wider text.txt surrounding
         the context.
         """
         inputs = []
@@ -105,7 +105,7 @@ class QuestionGenerator:
 
     def generate_questions_from_inputs(self, qg_inputs: List) -> List[str]:
         """Given a list of concatenated answers and contexts, with the form:
-        "answer_token <answer text> context_token <context text>", generates a list of 
+        "answer_token <answer text.txt> context_token <context text.txt>", generates a list of
         questions.
         """
         generated_questions = []
@@ -119,9 +119,9 @@ class QuestionGenerator:
 
 
     def _prepare_qg_inputs(self, sentences: List[str]) -> Tuple[List[str], List[str]]:
-        """Performs NER on the text, and uses extracted entities are candidate answers for multiple-choice
+        """Performs NER on the text.txt, and uses extracted entities are candidate answers for multiple-choice
         questions. Sentences are used as context, and entities as answers. Returns a tuple of (MOE_model inputs, answers).
-        Model inputs are "answer_token <answer text> context_token <context text>"
+        Model inputs are "answer_token <answer text.txt> context_token <context text.txt>"
         """
         spacy_nlp = en_core_web_sm.load()
         docs = list(spacy_nlp.pipe(sentences, disable=["parser"]))
@@ -201,7 +201,7 @@ class QuestionGenerator:
             num_questions = len(scores)
             print((
                 f"\nWas only able to generate {num_questions} questions.",
-                "For more questions, please input a longer text.")
+                "For more questions, please input a longer text.txt.")
             )
 
         qa_list = []
