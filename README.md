@@ -64,8 +64,8 @@ First, the trained HyperNetwork is loaded from a checkpoint. The base MoE model 
 
 Validation data is prepared in a structured format including:
 
-- Original queries (base inputs)  
-- Retrieved or reranked candidate passages (direct inputs)  
+- Original queries
+- Retrieved or reranked candidate passages
 - Passages used to generate HyperNetwork deltas  
 - Ground truth answers for evaluation  
 
